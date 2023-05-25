@@ -1,0 +1,106 @@
+---
+title: "Contract 2"
+author: "Caelan Miller"
+date: "2023-05-25"
+output: html_document
+---
+—
+```{r}
+Objective 1 
+
+#Attach necessary packages dplyr and leaflet
+
+library(leaflet)
+library(dplyr)
+
+
+#Load the necessary global COVID-19 data from the Github forked repository URL
+url <- "https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_global.csv"
+download.file(url, "global_confirmations.csv")
+
+# Load necessary data into a data frame
+global_data <- read.csv("global_confirmations.csv")
+
+
+#Summarize data by country/ calculate mean latitude and longitude
+country_data <- global_data %>%
+group_by(Country.Region, Lat, Long) %>%
+summarize(Confirmations = sum(as.numeric(`2023-05-22`)), Deaths = sum(as.numeric(`2023-05-22`))) %>%
+mutate(Lat = mean(Lat), Long = mean(Long))
+
+#Using leaflet attachment, develop map based off of summarized data
+map <- leaflet() %>%
+addTiles() %>%
+addCircleMarkers(
+data = country_data,
+lat = ~Lat,
+lng = ~Long,
+radius = sqrt(Confirmations),
+color = "red",
+fillOpacity = 0.7,
+label = ~Country.Region,
+popup = ~paste("Confirmations:", Confirmations, "<br>Deaths:", Deaths)
+)
+map # Display the map
+```
+
+
+—----------------------------------------------------------------------------------------------------------------------
+```{r}
+Objective 2 
+
+#Load knitr:
+library(knitr)
+
+
+#Make table and arrange data by country
+top_countries <- country_data %>%
+arrange(desc(Confirmations)) %>%
+head(10) # Adjust the number of top countries as needed
+
+kable(top_countries, caption = "Table of Top Countries")
+#Load ggplot
+library(ggplot2)
+
+```
+
+—----------------------------------------------------------------------------------------------------------------------
+```{r}
+  Objective 3
+
+# Load data into data frame
+us_data <- read.csv("us_confirmations.csv")
+
+
+#Filter California data/ develop scatter plots:
+ca_data <- us_data %>%
+filter(Province_State == "California") %>%
+mutate(Date = as.Date(Date, format = "%m/%d/%Y"))
+
+# Scatter plot California trajectory for disease
+ggplot(ca_data, aes(x = Date, y = Confirmed)) +
+geom_point() +
+geom_vline(xintercept = as.Date("2021-01-29"), linetype = "dashed", color = "blue") +
+geom_vline(xintercept = as.Date("2021-05-11"), linetype = "dashed", color = "green") +
+xlab("Date") +
+ylab("Confirmations") +
+ggtitle("California Trajectory for Confirmation Rates")
+
+# Scatter plot top four cities in California 
+top_cities <- ca_data %>%
+group_by(Admin2) %>%
+summarize(Total_Confirmations = max(Confirmed
+
+)) %>%
+top_n(4, Total_Confirmations)
+
+ggplot(ca_data, aes(x = Date, y = Confirmed, color = Admin2)) +
+geom_point() +
+geom_vline(xintercept = as.Date("2021-01-29"), linetype = "dashed", color = "blue") +
+geom_vline(xintercept = as.Date("2021-05-11"), linetype = "dashed", color = "green") +
+facet_wrap(~Admin2, nrow = 1) +
+xlab("Date") +
+ylab("Confirmations") +
+ggtitle("Top Four Cities for California in Confirmation Rates")
+```
+
