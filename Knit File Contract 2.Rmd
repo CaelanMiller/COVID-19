@@ -63,8 +63,6 @@ arrange(desc(Confirmations)) %>%
 head(10) # Adjust the number of top countries as needed
 
 kable(top_countries, caption = "Table of Top Countries")
-#Load ggplot
-library(ggplot2)
 
 ```
 
@@ -72,6 +70,13 @@ library(ggplot2)
 ### Objective 3
 
 ```{r}
+#Load ggplot
+library(ggplot2)
+
+#Load US COVID-19 data again
+url <- "https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_US.csv"
+download.file(url, "us_confirmations.csv")
+
 
 # Load data into data frame
 us_data <- read.csv("us_confirmations.csv")
