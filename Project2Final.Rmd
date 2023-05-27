@@ -1,0 +1,70 @@
+---
+title: "Project2"
+author: "Manuel V."
+date: "2023-05-27"
+output: html_document
+---
+
+```{r}
+
+library(dplyr)
+library(leaflet)
+library(RColorBrewer)
+
+# Extract data of global cases
+confirmed <- 
+  read.csv("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_global.csv", stringsAsFactors=FALSE)
+
+deaths <- 
+  read.csv("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_deaths_global.csv", stringsAsFactors=FALSE)
+
+# Created variable with Province and Latest Day
+confirmed_latest <- select(confirmed, Province.State, Country.Region, Lat, Long, "latest_day"=tail(names(confirmed),1))
+deaths_latest <- select(deaths, Province.State, Country.Region, Lat, Long, "latest_day"=tail(names(deaths),1))
+
+# Death and Confirmations Dataframe 
+covid_data <- 
+  confirmed_latest %>% inner_join(deaths_latest, by=c("Province.State", "Country.Region", "Lat", "Long")) %>%
+  mutate(All_Latest = rowSums(across(c(latest_day.x, latest_day.y)))) %>%
+  rename("Last_Confirm"="latest_day.x", "Last_Deaths"="latest_day.y") 
+covid_data <- covid_data[-c(54, 90, 245, 286),]
+
+# Create dataframe which averages lats and longs, and adds confirmations and deaths.
+country_data <- 
+  group_by(covid_data, Country.Region) %>%
+  summarize(mean(Lat), mean(Long), sum(Last_Confirm), sum(Last_Deaths), sum(All_Latest)) %>%
+  rename("lat"="mean(Lat)", "long"="mean(Long)", 
+         "Confirmations"="sum(Last_Confirm)", "Deaths"="sum(Last_Deaths)", "All"="sum(All_Latest)")
+
+# Numeric Data Formatting
+country_data$Confirmations <- prettyNum(country_data$Confirmations, big.mark=",", scientific = FALSE)
+country_data$Deaths <- prettyNum(country_data$Deaths, big.mark=",", scientific = FALSE)
+
+
+# Created Color Pallette
+pal = colorQuantile(palette=c("#3E8E9C", "#CCCCCC", "#E74C3C"), domain=country_data$All, n=5)
+
+# Generate Map 
+leaflet(country_data) %>%
+  addTiles() %>%
+  setView(lng=0, lat=0, zoom=1) %>%
+  addCircleMarkers(lng=~long, lat=~lat, radius=4, 
+                   label=~Country.Region, color=~pal(country_data$All), 
+                   group="Confirmations",
+                   popup=paste("Confirmations: ", as.character(country_data$Confirmations))) %>%
+  addCircleMarkers(lng=~long, lat=~lat, radius=4, 
+                   label=~Country.Region, color=~pal(country_data$All), 
+                   group="Deaths",
+                   popup=paste("Deaths: ", as.character(country_data$Deaths))) %>%
+  addLayersControl(overlayGroups = c("Confirmations", "Deaths"),
+                   options = layersControlOptions(collapsed = FALSE))
+
+
+```
+
+```{r}
+
+
+
+```
+
